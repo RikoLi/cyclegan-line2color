@@ -159,7 +159,7 @@ class CycleGAN():
 
         return Model(img, validity)
 
-    def train(self, epochs, batch_size=1, sample_interval=50):
+    def train(self, epochs, batch_size=1, sample_interval=100):
 
         start_time = datetime.datetime.now()
 
@@ -217,15 +217,14 @@ class CycleGAN():
                 # If at save interval => save generated image samples
                 if batch_i % sample_interval == 0:
                     self.sample_images(epoch, batch_i)
-                    self.g_AB.save('./saved_models/g_AB.h5')
-                    self.g_BA.save('./saved_models/g_BA.h5')
+                    self.g_AB.save('./saved_models/fill_color.h5')
+                    self.g_BA.save('./saved_models/remove_color.h5')
 
     def sample_images(self, epoch, batch_i):
         os.makedirs('images/%s' % self.dataset_name, exist_ok=True)
-        r, c = 2, 3
 
         imgs_A = self.data_loader.load_data(domain="A", batch_size=1, is_testing=True)
-        imgs_B = self.data_loader.load_data(domain="B", batch_size=1, is_testing=True)
+        # imgs_B = self.data_loader.load_data(domain="B", batch_size=1, is_testing=True)
 
         # Demo (for GIF)
         #imgs_A = self.data_loader.load_img('datasets/apple2orange/testA/n07740461_1541.jpg')
@@ -233,24 +232,32 @@ class CycleGAN():
 
         # Translate images to the other domain
         fake_B = self.g_AB.predict(imgs_A)
-        fake_A = self.g_BA.predict(imgs_B)
+        # fake_A = self.g_BA.predict(imgs_B)
         # Translate back to original domain
-        reconstr_A = self.g_BA.predict(fake_B)
-        reconstr_B = self.g_AB.predict(fake_A)
+        # reconstr_A = self.g_BA.predict(fake_B)
+        # reconstr_B = self.g_AB.predict(fake_A)
 
-        gen_imgs = np.concatenate([imgs_A, fake_B, reconstr_A, imgs_B, fake_A, reconstr_B])
+        # gen_imgs = np.concatenate([imgs_A, fake_B, reconstr_A, imgs_B, fake_A, reconstr_B])
+        # generate colored image only
+        gen_imgs = fake_B
 
         # Rescale images 0 - 1
         gen_imgs = 0.5 * gen_imgs + 0.5
 
-        titles = ['Original', 'Translated', 'Reconstructed']
-        fig, axs = plt.subplots(r, c)
-        cnt = 0
-        for i in range(r):
-            for j in range(c):
-                axs[i,j].imshow(gen_imgs[cnt])
-                axs[i, j].set_title(titles[j])
-                axs[i,j].axis('off')
-                cnt += 1
+        titles = ['Colored']
+        fig, axs = plt.subplots(1, 1)
+        axs.imshow(gen_imgs[0])
+        axs.set_title(titles[0])
+        axs.axis('off')
+        # titles = ['Original', 'Translated', 'Reconstructed']
+        # r, c = 2, 3
+        # fig, axs = plt.subplots(r, c)
+        # cnt = 0
+        # for i in range(r):
+        #     for j in range(c):
+        #         axs[i,j].imshow(gen_imgs[cnt])
+        #         axs[i, j].set_title(titles[j])
+        #         axs[i,j].axis('off')
+        #         cnt += 1
         fig.savefig("images/%s/%d_%d.png" % (self.dataset_name, epoch, batch_i))
         plt.close()
